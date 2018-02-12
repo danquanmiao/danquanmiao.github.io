@@ -1,0 +1,925 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Netty," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="本章包含
+
+ChannelHandler和ChannelPipeline APIs
+检测资源泄露
+异常处理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Netty in Action之ChannelHandler和ChannelPipeline">
+<meta property="og:url" content="http://yoursite.com/2017/03/13/Netty-in-Action之ChannelHandler和ChannelPipeline/index.html">
+<meta property="og:site_name" content="mdq's blog">
+<meta property="og:description" content="本章包含
+
+ChannelHandler和ChannelPipeline APIs
+检测资源泄露
+异常处理">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/f6-1.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/l6-1.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/l6-2.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/f6-2.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/f6-3.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/l6-8.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/f6-6.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/l6-12.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/l6-12.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/l6-12.jpg">
+<meta property="og:updated_time" content="2017-03-14T02:46:07.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Netty in Action之ChannelHandler和ChannelPipeline">
+<meta name="twitter:description" content="本章包含
+
+ChannelHandler和ChannelPipeline APIs
+检测资源泄露
+异常处理">
+<meta name="twitter:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/f6-1.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/03/13/Netty-in-Action之ChannelHandler和ChannelPipeline/"/>
+
+
+
+
+
+  <title> Netty in Action之ChannelHandler和ChannelPipeline | mdq's blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">mdq's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/13/Netty-in-Action之ChannelHandler和ChannelPipeline/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="danquanmiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mdq's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Netty in Action之ChannelHandler和ChannelPipeline
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-03-13T18:26:44+08:00">
+                2017-03-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本章包含</p>
+<ol>
+<li>ChannelHandler和ChannelPipeline APIs</li>
+<li>检测资源泄露</li>
+<li>异常处理</li>
+</ol>
+<hr>
+<a id="more"></a>
+<h1 id="ChannelHandler家族"><a href="#ChannelHandler家族" class="headerlink" title="ChannelHandler家族"></a>ChannelHandler家族</h1><h2 id="Channel的生命周期"><a href="#Channel的生命周期" class="headerlink" title="Channel的生命周期"></a>Channel的生命周期</h2><p><em>表1.1 Channel生命周期状态</em></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">状态</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">ChannelUnregistered</td>
+<td>Channel已创建，还未注册到一个EventLoop上</td>
+</tr>
+<tr>
+<td style="text-align:center">ChannelRegistered</td>
+<td>Channel已经注册到一个EventLoop上</td>
+</tr>
+<tr>
+<td style="text-align:center">ChannelActive</td>
+<td>Channel是活跃状态（连接到某个远端），可以收发数据</td>
+</tr>
+<tr>
+<td style="text-align:center">ChannelInactive</td>
+<td>Channel未连接到远端</td>
+</tr>
+</tbody>
+</table>
+<p>一个Channel正常的生命周期如图1.1所示。随着状态发生变化，相应的event产生。这些event被转发到ChannelPipeline中的ChannelHandler来采取相应的操作。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/f6-1.jpg" alt="Channel状态模型" title="图1.1  Channel状态模型"></p>
+<p>Netty定义了下面两个重要的ChannelHandler子接口</p>
+<ol>
+<li>ChannelInboundHandler——处理输入数据和所有类型的状态变化</li>
+<li>ChannelOutboundHandler——处理输出数据，可以拦截所有操作</li>
+</ol>
+<h2 id="ChannelInboundHandler接口"><a href="#ChannelInboundHandler接口" class="headerlink" title="ChannelInboundHandler接口"></a>ChannelInboundHandler接口</h2><p>表1.2列出了接口ChannelInboundHandler生命周期相关的方法。当收到数据，或者相关Channel的状态改变时，这些方法被调用。<br><em>表1.2 ChannelInboundHandler方法</em></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">channelRegistered</td>
+<td>当一个Channel注册到EventLoop上，可以处理I/O时被调用</td>
+</tr>
+<tr>
+<td style="text-align:center">channelUnregistered</td>
+<td>当一个Channel从它的EventLoop上解除注册，不再处理I/O时被调用</td>
+</tr>
+<tr>
+<td style="text-align:center">ChannelActive</td>
+<td>当Channel变成活跃状态时被调用；Channel是连接/绑定、就绪的</td>
+</tr>
+<tr>
+<td style="text-align:center">ChannelInactive</td>
+<td>当Channel离开活跃状态，不再连接到某个远端时被调用</td>
+</tr>
+<tr>
+<td style="text-align:center">channelReadComplete</td>
+<td>当Channel上的某个读操作完成时被调用</td>
+</tr>
+<tr>
+<td style="text-align:center">channelRead</td>
+<td>当从Channel中读数据时被调用</td>
+</tr>
+<tr>
+<td style="text-align:center">channelWritabilityChanged</td>
+<td>当Channel的可写状态改变时被调用。通过这个方法，用户可以确保写操作不会进行地太快（避免OutOfMemoryError）或者当Channel又变成可写时继续写操作。Channel类的isWritable()方法可以用来检查Channel的可写状态。可写性的阈值可以通过Channel.config().setWriteHighWaterMark()和Channel.config().setWriteLowWaterMark()来设定。</td>
+</tr>
+<tr>
+<td style="text-align:center">userEventTriggered</td>
+<td>因某个POJO穿过ChannelPipeline引发ChannelnboundHandler.fireUserEventTriggered()时被调用</td>
+</tr>
+</tbody>
+</table>
+<p>当一个ChannelInboundHandler实现类重写channelRead()方法时，它要负责释放ByteBuf相关的内存。<br>Netty为此提供了一个工具方法，ReferenceCountUtil.release()，如下所示。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/l6-1.jpg" alt="代码清单1.1 释放消息资源" title="代码清单1.1 释放消息资源"></p>
+<p>对未释放的资源，Netty会打印一个警告级别(WARN-level)的日志消息，让你很方便地找到代码中出问题的实例。但是用这种方式管理资源有些麻烦。<br>一个更简单的替代方法就是用SimpleChannelInboundHandler。SimpleChannelInboundHandler自动释放资源，任何对消息的引用都会变成无效，所以你不能保存这些引用待后来使用。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/l6-2.jpg" alt="代码清单1.2 使用SimpleChannelInboundHandler" title="代码清单1.2 使用SimpleChannelInboundHandler"></p>
+<h2 id="ChannelOutboundHandler接口"><a href="#ChannelOutboundHandler接口" class="headerlink" title="ChannelOutboundHandler接口"></a>ChannelOutboundHandler接口</h2><p>输出的操作和数据由ChannelOutBoundHandler处理。它的方法可以被Channel，ChannelPipeline和ChannelHandlerContext调用。<br>ChannelOutboundHandler有一个强大的功能，可以按需推迟一个操作，这使得处理请求可以用到更为复杂的策略。比如，如果写数据到远端被暂停，你可以推迟flush操作，稍后再试。<br><em>CHANNELPROMISE VS. CHANNELFUTURE</em><br>ChannelOutboundHandler的大部分方法都用了一个ChannelPromise输入参数，用于当操作完成时收到通知。<br>ChannelPromise是ChannelFuture的子接口，定义了可写的方法，比如setSuccess()，或者setFailure()，而ChannelFuture则是不可变对象。  </p>
+<h2 id="ChannelHandler适配器类"><a href="#ChannelHandler适配器类" class="headerlink" title="ChannelHandler适配器类"></a>ChannelHandler适配器类</h2><p>ChannelInboundHandlerAdapter和ChannelOutboundHandlerAdapter这两个类。<br>这两个适配器类分别提供了ChannelInboundHandler和ChannelOutboundHandler的基本实现。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/f6-2.jpg" alt="ChannelHandlerAdapter类层级关系" title="图1.2 ChannelHandlerAdapter类层级关系"></p>
+<h2 id="资源管理"><a href="#资源管理" class="headerlink" title="资源管理"></a>资源管理</h2><p>Netty目前定义了四种内存泄露检测的级别，如表1.3所示。  </p>
+<p><em>表1.3 内存泄露检测级别</em></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">级别</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">DISABLED</td>
+<td>关闭内存泄露检测。 只有在大量测试后，才能用这个级别</td>
+</tr>
+<tr>
+<td style="text-align:center">SIMPLE</td>
+<td>报告默认的1%采样率中发现的任何泄露。这是默认的级别，在大部分情况下适用</td>
+</tr>
+<tr>
+<td style="text-align:center">ADVANCED</td>
+<td>报告发现的泄露和消息的位置。使用默认的采样率。</td>
+</tr>
+<tr>
+<td style="text-align:center">PARANOID</td>
+<td>类似ADVANCED级别，但是每个消息的获取都被检测采样。这对性能有很大影响，只能在调试阶段使用。</td>
+</tr>
+</tbody>
+</table>
+<p>用上表中的某个值来配置下面这个Java系统属性，就可以设定内存泄露检测级别:<br>java -Dio.netty.leakDetectionLevel=ADVANCED</p>
+<p>因为读取和释放输入消息是一个非常常见的任务，Netty提供了一个特殊的ChannelInboundHandler实现类——SimpleChannelInboundHandler。<br>一条消息在被SimpleChannelInboundHandler的ChannelRead0()读取后，会被自动释放资源。</p>
+<p>如果一个消息被“消费”或者丢弃，没有送到ChannelPipeline中的下一个ChannelOutboundHandler，用户就要负责调用ReferenceCountUtil.release()。</p>
+<hr>
+<h1 id="ChannelPipeline接口"><a href="#ChannelPipeline接口" class="headerlink" title="ChannelPipeline接口"></a>ChannelPipeline接口</h1><p>图1.3是一个典型的ChannelPipeline布局，包括输入和输出ChannelHandler；同时说明了我们之前提到过的：ChannelPipeline主要就是由一系列的ChannelHandler组成的。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/f6-3.jpg" alt="ChannelPipeline and ChannelHandlers" title="图1.3 ChannelPipeline and ChannelHandlers"></p>
+<p><span style="border-bottom:2px solid black;"><em>有关ChannelPipeline</em></span><br>你也许会说，从event穿过ChannelPipeline这个角度看，起始端取决于这个event是输入还是输出的。<br>但是Netty总是把ChannelPipeline的输入入口（图6.3的最左边）作为起点，输出入口（最右边）作为终点。  </p>
+<p><span style="border-bottom:2px solid black;"><em>ChannelHandler的执行和阻塞</em></span><br>通常ChannelPipeline中的每个ChannelHandler通过它的EventLoop（I/O线程）来处理传给它的event。<br>不阻塞这个线程是非常重要的，因为阻塞有可能会对整个I/O处理造成负面影响。  </p>
+<p><span style="border-bottom:2px solid black;"><em>difficult:</em></span><br>如果event被送往一个定制的EventExcutorGroup，它会被这个EventExcutorGroup中的一个EventExecutor处理，由此脱离了Channel的EventLoop。<br>针对这种场景，Netty提供了一个具体实现，称为DefaultEventExecutorGroup。</p>
+<h2 id="启动事件"><a href="#启动事件" class="headerlink" title="启动事件"></a>启动事件</h2><p>表1.4里列出了输入方法，用来通知ChannelInboundHandler在ChannelPipeline中发生的event。  </p>
+<p><em>表1.4 ChannelPipeline输入方法</em></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">方法名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">fireChannelRegistered</td>
+<td>调用ChannelPipeline中下一个ChannelInboundHandler的channelRegistered(ChannelHandlerContext)</td>
+</tr>
+<tr>
+<td style="text-align:center">fireChannelUnregistered</td>
+<td>调用ChannelPipeline中下一个ChannelInboundHandler的channelUnRegistered(ChannelHandlerContext)</td>
+</tr>
+<tr>
+<td style="text-align:center">fireChannelActive</td>
+<td>调用ChannelPipeline中下一个ChannelInboundHandler的channelActive(ChannelHandlerContext)</td>
+</tr>
+<tr>
+<td style="text-align:center">fireChannelInactive</td>
+<td>调用ChannelPipeline中下一个ChannelInboundHandler的channelInactive(ChannelHandlerContext)</td>
+</tr>
+<tr>
+<td style="text-align:center">fireExceptionCaught</td>
+<td>调用ChannelPipeline中下一个ChanneHandler的exceptionCaught(ChannelHandlerContext,Throwable)</td>
+</tr>
+<tr>
+<td style="text-align:center">fireUserEventTriggered</td>
+<td>调用ChannelPipeline中下一个ChannelInboundHandler的userEventTriggered(ChannelHandlerContext, Object)</td>
+</tr>
+<tr>
+<td style="text-align:center">fireChannelRead</td>
+<td>调用ChannelPipeline中下一个ChannelInboundHandler的channelRead(ChannelHandlerContext, Object msg)</td>
+</tr>
+<tr>
+<td style="text-align:center">fireChannelReadComplete</td>
+<td>调用ChannelPipeline中下一个ChannelStateHandler的channelReadComplete(ChannelHandlerContext)</td>
+</tr>
+</tbody>
+</table>
+<p>在输出方向，处理一个event会作用于底层的socket。表1.5列出了ChannelPipeline API的输出操作。</p>
+<p><em>表1.5 ChannelPipeline输出操作</em></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">方法名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">bind</td>
+<td>绑定Channel到一个本地地址。这会调用ChannelPipeline中下一个ChannelOutboundHandler的bind(ChannelHandlerContext, SocketAddress, ChannelPromise)</td>
+</tr>
+<tr>
+<td style="text-align:center">connect</td>
+<td>连接Channel到一个远端地址。这会调用ChannelPipeline中下一个ChannelOutboundHandler的connect(ChannelHandlerContext, SocketAddress, ChannelPromise)</td>
+</tr>
+<tr>
+<td style="text-align:center">disconnect</td>
+<td>断开Channel。这会调用ChannelPipeline中下一个ChannelOutboundHandler的disconnect(ChannelHandlerContext, ChannelPromise)</td>
+</tr>
+<tr>
+<td style="text-align:center">close</td>
+<td>关闭Channel。这会调用ChannelPipeline中下一个ChannelOutboundHandler的close(ChannelHandlerContext,ChannelPromise)</td>
+</tr>
+<tr>
+<td style="text-align:center">deregister</td>
+<td>Channel从它之前分配的EventLoop上解除注册。这会调用ChannelPipeline中下一个ChannelOutboundHandler的deregister(ChannelHandlerContext, ChannelPromise)</td>
+</tr>
+<tr>
+<td style="text-align:center">flush</td>
+<td>刷所有Channel待写的数据。这会调用ChannelPipeline中下一个ChannelOutboundHandler的flush(ChannelHandlerContext)</td>
+</tr>
+<tr>
+<td style="text-align:center">write</td>
+<td>往Channel写一条消息。  这会调用ChannelPipeline中下一个ChannelOutboundHandler的write(ChannelHandlerContext, Object msg, ChannelPromise)  注意：不会写消息到底层的Socket，只是排队等候。如果要写到Socket中，调用flush()或者writeAndFlush()</td>
+</tr>
+<tr>
+<td style="text-align:center">writeAndFlush</td>
+<td>这是先后调用write()和flush()的便捷方法。</td>
+</tr>
+<tr>
+<td style="text-align:center">read</td>
+<td>请求从Channel中读更多的数据。这会调用ChannelPipeline中下一个ChannelOutboundHandler的read(ChannelHandlerContext)</td>
+</tr>
+</tbody>
+</table>
+<p>小结：<br>ChannelPipeline保存了所有Channel相关的ChannelHandler可通过增加和减少ChannelHandler来动态修改ChannelPipeline。<br>ChannelPipeline有大量API，用来对输入输出event做出响应行动。</p>
+<hr>
+<h1 id="ChannelHandlerContext接口"><a href="#ChannelHandlerContext接口" class="headerlink" title="ChannelHandlerContext接口"></a>ChannelHandlerContext接口</h1><p>ChannelHandlerContext代表了一个ChannelHandler和一个ChannelPipeline之间的关系，它在ChannelHandler被添加到ChannelPipeline时被创建。<br>ChannelHandlerContext的主要功能是管理它对应的ChannelHandler和属于同一个ChannelPipeline的其他ChannelHandler之间的交互。</p>
+<p>ChannelHandlerContext有很多方法，其中一些方法Channel和ChannelPipeline也有，但是有些区别。<br>在ChannelHandlerContext上调用的同样的方法，仅仅从当前ChannelHandler开始，走到pipeline中下一个可以处理这个event的ChannelHandler。</p>
+<h2 id="使用ChannelHandlerContext"><a href="#使用ChannelHandlerContext" class="headerlink" title="使用ChannelHandlerContext"></a>使用ChannelHandlerContext</h2><p>为了从某个特定的ChannelHandler开始处理，你必须获取前一个ChannelHandler绑定的ChannelHandlerContext的引用。<br>这个ChannelHandlerContext会调用它所绑定的ChannelHandler的下一个handler。</p>
+<p>下面的代码说明了这个用法。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/l6-8.jpg" alt="调用ChannelHandlerContext上的write()" title="代码清单1.3 调用ChannelHandlerContext上的write()"></p>
+<p>如图1.4所示，穿过ChannelPipeline的消息从下一个ChannelHandler开始，忽略所有之前的ChannelHandler。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/f6-6.jpg" alt="ChannelHandlerContext触发的event流操作" title="图1.4 ChannelHandlerContext触发的event流操作"></p>
+<h2 id="ChannelHandler和ChannelHandlerContext的高级用法"><a href="#ChannelHandler和ChannelHandlerContext的高级用法" class="headerlink" title="ChannelHandler和ChannelHandlerContext的高级用法"></a>ChannelHandler和ChannelHandlerContext的高级用法</h2><p>因为一个ChannelHandler可以属于多个ChannelPipeline，所以它可以绑定多个ChannelHandlerContext实例。<br>想要实现这个用法的ChannelHandler必须加上注解@Sharable；否则，试图将它添加到多个ChannelPipeline时会触发一个异常。</p>
+<p><span style="border-bottom:2px solid black;">为什么要共享一个ChannelHandler？<br>将一个ChannelHandler装入多个ChannelPipeline的一个常见原因，是收集多个Channel的统计数据 </span></p>
+<h1 id="异常处理"><a href="#异常处理" class="headerlink" title="异常处理"></a>异常处理</h1><h2 id="处理输入异常"><a href="#处理输入异常" class="headerlink" title="处理输入异常"></a>处理输入异常</h2><p>如果异常event的在输入e处理过程中抛出，它会从它被触发的那个ChannelInboundHandler开始穿过整个ChannelPipeline。<br>下面的代码是一个简单的例子:</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/l6-12.jpg" alt="基本的输入异常处理" title="代码清单1.4 基本的输入异常处理"></p>
+<p>小结:<br>ChannelHandler.exceptionCaught()的默认实现会转发当前的异常到pipeline中的一下个handler。<br>如果一个异常到达了pipeline的尾部，它会被打印到日志，说明未被处理你要重写exceptionCaught()来定义一个定制的异常处理。这时就由你来决定是否将这个异常传递出去。</p>
+<h2 id="处理输出异常"><a href="#处理输出异常" class="headerlink" title="处理输出异常"></a>处理输出异常</h2><p>如何处理输出操作中正常和异常的情况基于下面的通知机制：<br>每个输出操作都返回一个ChannelFuture。当操作完成时，注册在ChannelFuture上的ChannelFutureListener被通知操作成功或者失败。<br>几乎ChannelOutboundHandler的所有方法都传入了一个ChannelPromise参数。作为ChannelFuture的子类，ChannelPromise也可以注册listener收听异步通知。<br>但是ChannelPromise还有一些可写方法，提供了即时通知的功能。最常用的方法是在输出操作（比如write()）返回的ChannelFuture上调用addListener()。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/l6-12.jpg" alt="添加一个ChannelFutureListener到ChannelFuture" title="代码清单1.5 添加一个ChannelFutureListener到ChannelFuture"></p>
+<p>第二种做法是添加一个ChannelFutureListener到ChannelPromise，然后将这个ChannelPromise作为参数传入ChannelOutboundHandler方法。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter6/l6-12.jpg" alt="添加一个ChannelFutureListener到ChannelPromise" title="代码清单1.6 基本的输入异常处理"></p>
+<p>何时选择某个做法，而不是另一个？对于异常的详细处理，你也许会发现在调用输出操作时，添加一个ChannelFutureListener更加合适，如代码1.5所示。<br>对于不是针对异常的处理的情况，你也许会发现代码1.6所示的ChannelOutboundHandler定制化实现更加简单。</p>
+<h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p>在这一章我们进一步了解了Netty的数据处理组件ChannelHandler。我们讨论了ChannelHandler是怎么链接到一起的，以及它们作为ChannelInboundHandler和ChannelOutboundHandler时是如何跟ChannelPipeline交互的。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Netty/" rel="tag"># Netty</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/10/Netty-in-Action之ByteBuf/" rel="next" title="Netty in Action之ByteBuf">
+                <i class="fa fa-chevron-left"></i> Netty in Action之ByteBuf
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/03/28/Netty-in-Action之EventLoop和线程模型/" rel="prev" title="Netty in Action之EventLoop和线程模型">
+                Netty in Action之EventLoop和线程模型 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.png"
+               alt="danquanmiao" />
+          <p class="site-author-name" itemprop="name">danquanmiao</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ChannelHandler家族"><span class="nav-number">1.</span> <span class="nav-text">ChannelHandler家族</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Channel的生命周期"><span class="nav-number">1.1.</span> <span class="nav-text">Channel的生命周期</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ChannelInboundHandler接口"><span class="nav-number">1.2.</span> <span class="nav-text">ChannelInboundHandler接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ChannelOutboundHandler接口"><span class="nav-number">1.3.</span> <span class="nav-text">ChannelOutboundHandler接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ChannelHandler适配器类"><span class="nav-number">1.4.</span> <span class="nav-text">ChannelHandler适配器类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#资源管理"><span class="nav-number">1.5.</span> <span class="nav-text">资源管理</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ChannelPipeline接口"><span class="nav-number">2.</span> <span class="nav-text">ChannelPipeline接口</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#启动事件"><span class="nav-number">2.1.</span> <span class="nav-text">启动事件</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ChannelHandlerContext接口"><span class="nav-number">3.</span> <span class="nav-text">ChannelHandlerContext接口</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用ChannelHandlerContext"><span class="nav-number">3.1.</span> <span class="nav-text">使用ChannelHandlerContext</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ChannelHandler和ChannelHandlerContext的高级用法"><span class="nav-number">3.2.</span> <span class="nav-text">ChannelHandler和ChannelHandlerContext的高级用法</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#异常处理"><span class="nav-number">4.</span> <span class="nav-text">异常处理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#处理输入异常"><span class="nav-number">4.1.</span> <span class="nav-text">处理输入异常</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#处理输出异常"><span class="nav-number">4.2.</span> <span class="nav-text">处理输出异常</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#小结"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">danquanmiao</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

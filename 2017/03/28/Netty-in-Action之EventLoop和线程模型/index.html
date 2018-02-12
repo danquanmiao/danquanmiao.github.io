@@ -1,0 +1,699 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Netty," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="线程模型概览因为多核或者多CPU的电脑很普遍，现代应用程序大部分都采用复杂的多线程技术来充分利用系统资源。基本的线程池模式描述如下：1 从池中空闲的线程中选出一个，分配一个提交的task（一个Runnable的实现）2 当task完成，线程返回池中，等待复用（下一次task分配）">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Netty in Action之EventLoop和线程模型">
+<meta property="og:url" content="http://yoursite.com/2017/03/28/Netty-in-Action之EventLoop和线程模型/index.html">
+<meta property="og:site_name" content="mdq's blog">
+<meta property="og:description" content="线程模型概览因为多核或者多CPU的电脑很普遍，现代应用程序大部分都采用复杂的多线程技术来充分利用系统资源。基本的线程池模式描述如下：1 从池中空闲的线程中选出一个，分配一个提交的task（一个Runnable的实现）2 当task完成，线程返回池中，等待复用（下一次task分配）">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/f7-1.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/f7-21.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/l7-2.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/l7-3.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/l7-4.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/f7-3.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/f7-4.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/f7-5.jpg">
+<meta property="og:updated_time" content="2017-03-28T07:48:27.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Netty in Action之EventLoop和线程模型">
+<meta name="twitter:description" content="线程模型概览因为多核或者多CPU的电脑很普遍，现代应用程序大部分都采用复杂的多线程技术来充分利用系统资源。基本的线程池模式描述如下：1 从池中空闲的线程中选出一个，分配一个提交的task（一个Runnable的实现）2 当task完成，线程返回池中，等待复用（下一次task分配）">
+<meta name="twitter:image" content="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/f7-1.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/03/28/Netty-in-Action之EventLoop和线程模型/"/>
+
+
+
+
+
+  <title> Netty in Action之EventLoop和线程模型 | mdq's blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">mdq's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/28/Netty-in-Action之EventLoop和线程模型/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="danquanmiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mdq's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Netty in Action之EventLoop和线程模型
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-03-28T14:46:34+08:00">
+                2017-03-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="线程模型概览"><a href="#线程模型概览" class="headerlink" title="线程模型概览"></a>线程模型概览</h1><p>因为多核或者多CPU的电脑很普遍，现代应用程序大部分都采用复杂的多线程技术来充分利用系统资源。<br>基本的线程池模式描述如下：<br>1 从池中空闲的线程中选出一个，分配一个提交的task（一个Runnable的实现）<br>2 当task完成，线程返回池中，等待复用（下一次task分配）</p>
+<a id="more"></a>
+<p>这个模式如图1.1所示。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/f7-1.jpg" alt="Executor执行逻辑" title="图1.1  Executor执行逻辑"></p>
+<p>但是这个模型还是无法消除上下文切换带来的开销，而这一点会随着线程数量的增加变得明显，在高负载下会变得严重。</p>
+<hr>
+<h1 id="EventLoop接口"><a href="#EventLoop接口" class="headerlink" title="EventLoop接口"></a>EventLoop接口</h1><p>运行task来处理一个连接在生命周期中产生的event，是任何一个网络框架的基本功能。其相应的编程结构通常被称为一个event loop， Netty采纳了这个名字，设计了接口io.netty.channel.EventLoop。  </p>
+<p>Netty的EventLoop是协作设计(collaborative design )的一部分，<br>这个设计用到了两类基本的API：并发和网络（concurrency and networking) 类层次结构如图1.2所示。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/f7-21.jpg" alt="EventLoop类层次结构" title="图1.2  EventLoop 类层次结构"></p>
+<p>在这个模型中，EventLoop始终由一个线程驱动，task（Runnable或者Callable）可以直接提交到EventLoop实现即刻或者延后执行。<br>根据配置和可用的CPU核，可以创建多个EventLoop来优化资源利用，并且一个EventLoop可以被指派来服务多个Channel。</p>
+<h2 id="Netty3-的IO操作"><a href="#Netty3-的IO操作" class="headerlink" title="Netty3 的IO操作"></a>Netty3 的IO操作</h2><p>之前发布版本里的线程模型只保证输入（之前被称为upstream）event会在所谓的I/O线程(即Netty4的EventLoop)中执行。<br>所有输出（downstream）event被I/O或者其他任何线程处理。<br>一开始，这个做法看起来不错，但是后来发现有问题：<br>1 因为ChannelHandler中的输出event需要加上同步。简单来说，我们不能保证多个线程不会试图同时去获取一个输出event。<br>2 当Channel.write()发生了异常，你需要产生并且触发一个exceptionCaught event。<br>但是在Netty3的模型里，因为这是一个输入event，结果就成了你在调用线程中执行Channel.write()代码，<br>然后把产生的异常event交给I/O线程来执行，造成了一次额外的上下文切换。</p>
+<p>Netty4采用的线程模型，在同一个线程的EventLoop中处理所有发生的事，解决了这两个问题。<br>这个模型提供了一个更加简单的执行结构，省去了ChannelHandler间同步的麻烦（除了那些需要在多个Channel间共享的情况）。</p>
+<hr>
+<h1 id="任务调度"><a href="#任务调度" class="headerlink" title="任务调度"></a>任务调度</h1><h2 id="JDK调度API"><a href="#JDK调度API" class="headerlink" title="JDK调度API"></a>JDK调度API</h2><p>Java5之前，任务调度是建立在java.util.Timer的基础上的，这个类用了一个后台线程，和标准线程有同样的限制。<br>之后，JDK提供了java.util.concurrent包，定义了接口ScheduledExecutorService。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/l7-2.jpg" alt="用ScheduledExecutorService调度task" title="图1.3  用ScheduledExecutorService调度task"></p>
+<p>虽然ScheduledExecutorService API用起来很简单，但是在高负载情况下它会带来性能的损失。</p>
+<h2 id="用EventLoop调度task"><a href="#用EventLoop调度task" class="headerlink" title="用EventLoop调度task"></a>用EventLoop调度task</h2><p>ScheduledExecutorService 的实现有一些局限，比如，需要创建额外的线程来管理线程池。<br>如果要调度很多task，这一点会成为性能的瓶颈。通过采用channel的EventLoop来实现调度，Netty解决了这个问题，如下代码所示</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/l7-3.jpg" alt="用EventLoop调度task" title="图1.4  用EventLoop调度task"></p>
+<p>如果要让这个task每60秒跑一次，用scheduleAtFixedRate()方法，如下所示。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/l7-4.jpg" alt="用EventLoop调度循环执行的task" title="图1.5  用EventLoop调度循环执行的task"></p>
+<hr>
+<h1 id="实现细节"><a href="#实现细节" class="headerlink" title="实现细节"></a>实现细节</h1><p>这一小节会详细说明Netty线程模型和任务调度的关键部分。我们还会提到需要注意的一些限制，以及正在进行开发的部分。</p>
+<h2 id="线程管理"><a href="#线程管理" class="headerlink" title="线程管理"></a>线程管理</h2><p>Netty线程模型的出色性能取决于判断当前执行线程是谁；也就是说，它是否是绑定到当前Channel和EventLoop的线程。<br>（回忆下，EventLoop负责处理一个Channel在整个生命周期中的所有event）</p>
+<p>注意每个EventLoop都有它自己task队列，独立于其他任何一个EventLoop。<br>图1.6是EventLoop用来调度task的执行逻辑。这是Netty线程模型的一个关键部分。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/f7-3.jpg" alt="EventLoop执行逻辑" title="图1.6  EventLoop执行逻辑"></p>
+<p>tips: <span style="border-bottom:2px dashed black;">永远不要把一个长时间运行的task放到执行的队列中，因为这会阻塞同一个线程中其他task的执行。<br>如果你必须要执行阻塞调用或者执行长时间运行的task，我们建议采用一个专门的EventExecutor。</span></p>
+<h2 id="EventLoop-线程的分配"><a href="#EventLoop-线程的分配" class="headerlink" title="EventLoop/线程的分配"></a>EventLoop/线程的分配</h2><p><span style="border-bottom:2px dashed black;">异步传输</span><br>异步实现只用了很少几个EventLoop（和它们关联的线程），在目前Netty的模型中，这几个EventLoop被所有Channel共享。<br>这让很多Channel被最少数量的线程服务，而不是每个Channel分配一个线程。<br>图1.7是一个包含3个固定EventLoop（每个都由一个线程驱动）的EventLoopGroup。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/f7-4.jpg" alt="针对非阻塞传输的EventLoop分配（比如NIO和AIO）" title="图1.7  针对非阻塞传输的EventLoop分配（比如NIO和AIO）"></p>
+<p>一旦Channel被指派了一个EventLoop，在它的整个生命周期过程中，都会用这个EventLoop（及其关联的线程）。</p>
+<p><span style="border-bottom:2px dashed black;">阻塞传输</span><br>针对其他传输比如OIO（老版阻塞I/O）的EventLoop分配设计有点不同，如图1.8所示。</p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/netty_chapter7/f7-5.jpg" alt="针对非阻塞传输的EventLoop分配（比如NIO和AIO）" title="图1.8  针对非阻塞传输的EventLoop分配（比如NIO和AIO）"></p>
+<hr>
+<h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p>在这一章，先学习了线程模型概览，然后我们详细讨论了Netty线程模型的性能和设计一致性。<br>你看到了如何在EventLoop（I/O线程）中执行你的task（Netty框架自己也是这么做的）。<br>你学会了如何延迟执行task，并且我们还研究了高负载下可扩展性的问题。你还看到了如何验证一个task是否已经执行以及如何取消它。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Netty/" rel="tag"># Netty</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/13/Netty-in-Action之ChannelHandler和ChannelPipeline/" rel="next" title="Netty in Action之ChannelHandler和ChannelPipeline">
+                <i class="fa fa-chevron-left"></i> Netty in Action之ChannelHandler和ChannelPipeline
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.png"
+               alt="danquanmiao" />
+          <p class="site-author-name" itemprop="name">danquanmiao</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#线程模型概览"><span class="nav-number">1.</span> <span class="nav-text">线程模型概览</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#EventLoop接口"><span class="nav-number">2.</span> <span class="nav-text">EventLoop接口</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Netty3-的IO操作"><span class="nav-number">2.1.</span> <span class="nav-text">Netty3 的IO操作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#任务调度"><span class="nav-number">3.</span> <span class="nav-text">任务调度</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#JDK调度API"><span class="nav-number">3.1.</span> <span class="nav-text">JDK调度API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#用EventLoop调度task"><span class="nav-number">3.2.</span> <span class="nav-text">用EventLoop调度task</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实现细节"><span class="nav-number">4.</span> <span class="nav-text">实现细节</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#线程管理"><span class="nav-number">4.1.</span> <span class="nav-text">线程管理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#EventLoop-线程的分配"><span class="nav-number">4.2.</span> <span class="nav-text">EventLoop/线程的分配</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#小结"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">danquanmiao</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

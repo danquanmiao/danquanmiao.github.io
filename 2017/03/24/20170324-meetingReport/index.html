@@ -1,0 +1,683 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="meeting," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="张涛任务 #97643 push-center广播消息推送服务推送效率提升(进行中)push-center广播消息推送服务推送效率提升
+任务 #99135 apns数据库连接问题处理apns增加数据库空闲连接验证、失效检查连接时间间隔
+任务 #99137 push-center配置APP证书调用apns接口刷新缓存的问题push-center配置APP证书，需要同时刷新兴议、滨安4台服务器
+任加勒">
+<meta property="og:type" content="article">
+<meta property="og:title" content="20170324_meetingReport">
+<meta property="og:url" content="http://yoursite.com/2017/03/24/20170324-meetingReport/index.html">
+<meta property="og:site_name" content="mdq's blog">
+<meta property="og:description" content="张涛任务 #97643 push-center广播消息推送服务推送效率提升(进行中)push-center广播消息推送服务推送效率提升
+任务 #99135 apns数据库连接问题处理apns增加数据库空闲连接验证、失效检查连接时间间隔
+任务 #99137 push-center配置APP证书调用apns接口刷新缓存的问题push-center配置APP证书，需要同时刷新兴议、滨安4台服务器
+任加勒">
+<meta property="og:updated_time" content="2017-03-24T06:13:42.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="20170324_meetingReport">
+<meta name="twitter:description" content="张涛任务 #97643 push-center广播消息推送服务推送效率提升(进行中)push-center广播消息推送服务推送效率提升
+任务 #99135 apns数据库连接问题处理apns增加数据库空闲连接验证、失效检查连接时间间隔
+任务 #99137 push-center配置APP证书调用apns接口刷新缓存的问题push-center配置APP证书，需要同时刷新兴议、滨安4台服务器
+任加勒">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/03/24/20170324-meetingReport/"/>
+
+
+
+
+
+  <title> 20170324_meetingReport | mdq's blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">mdq's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/24/20170324-meetingReport/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="danquanmiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mdq's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                20170324_meetingReport
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-03-24T11:07:57+08:00">
+                2017-03-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="张涛"><a href="#张涛" class="headerlink" title="张涛"></a>张涛</h1><p><a href="http://redmine.guahao-inc.com/issues/97643" target="_blank" rel="external">任务 #97643</a> push-center广播消息推送服务推送效率提升(进行中)<br>push-center广播消息推送服务推送效率提升</p>
+<p><a href="http://redmine.guahao-inc.com/issues/99135" target="_blank" rel="external">任务 #99135</a> apns数据库连接问题处理<br>apns增加数据库空闲连接验证、失效检查连接时间间隔</p>
+<p><a href="http://redmine.guahao-inc.com/issues/99137" target="_blank" rel="external">任务 #99137</a> push-center配置APP证书调用apns接口刷新缓存的问题<br>push-center配置APP证书，需要同时刷新兴议、滨安4台服务器</p>
+<h1 id="任加勒"><a href="#任加勒" class="headerlink" title="任加勒"></a>任加勒</h1><p><a href="http://redmine.guahao-inc.com/issues/97496" target="_blank" rel="external">任务 #97496</a> 家庭医生项目健康宣教功能消息提醒<br>家庭医生医生web端编辑文章推送给用户时，用户端微信公众号“微医家庭医生”、“微医健康计划”可收到健康宣教的消息提醒</p>
+<p><a href="">任务 #98104</a> 安好医生项目中预约挂号订单状态消息推送<br>安好医生项目中预约挂号订单状态消息推送 预约成功/已取消 </p>
+<p><a href="">任务 #97209</a> 家庭医生项目聊天功能优化（消息提醒）<br>家庭／责任医生聊天改造，由echat改为轮询。推送消息提醒。</p>
+<p><a href="">任务 #97577</a> 安好医生处方消息推送<br>开处方给用户发送消息，需要加勒配置一条消息模版</p>
+<h1 id="黄嘉颖"><a href="#黄嘉颖" class="headerlink" title="黄嘉颖"></a>黄嘉颖</h1><p><a href="http://redmine.guahao-inc.com/issues/94677" target="_blank" rel="external">任务 #94677</a> echat点对点推送及系统通知分离(已发布)<br>增加 <code>friend_notice_his</code>好友通知表、<code>muc_notice_his</code>群组通知表</p>
+<p>1 系统健康监控规划<br>2 日常问题排查：讨论组、视频</p>
+<h1 id="魏帅"><a href="#魏帅" class="headerlink" title="魏帅"></a>魏帅</h1><p><a href="http://redmine.guahao-inc.com/issues/96689" target="_blank" rel="external">任务 #96689</a> echat新增一个系统：echat-appserver(处理中)<br>给app提供http协议数据交互，对客户端echat相关的异常上报、或后续tcp协议迁移有重要作用</p>
+<p>1 ecaht-app的概要设计，文档见confince，测试、线上环境搭建<br>测试的伟赞在搭建，线上已经搭建好，但域名还需申请，预计下周和客户端投入开发<br>2 日常问题排查 注意的坑: 患者随访，医生给患者发消息会有桌面推送，患者给医生发不会有，push-center中配置。</p>
+<h1 id="缪丹权"><a href="#缪丹权" class="headerlink" title="缪丹权"></a>缪丹权</h1><p><a href="http://redmine.guahao-inc.com/issues/98832" target="_blank" rel="external">任务 #98832</a> echat-gops bug修复及优化用户查询发布上线<br>1 好友关系通过好友昵称无法得到搜索结果的bug修复<br>2 日志搜索新增app搜索模板，支持app上报日志查询<br>3 优化用户查询页面，改为可以弹开的小页面, 依赖用户ID的其他页面也可以直接弹出用户需查询页面</p>
+<p><a href="http://redmine.guahao-inc.com/issues/99087" target="_blank" rel="external">任务 #99087</a> echat后台管理增加群的上限设置功能(新建)<br>在GOPS后台增加功能: 群的查询列表里增加群的成员数上限设置</p>
+<h1 id="汤政"><a href="#汤政" class="headerlink" title="汤政"></a>汤政</h1><p><a href="http://redmine.guahao-inc.com/issues/98146" target="_blank" rel="external">任务 #98146</a> 视频后台添加直播全流程模拟终端(新建)<br>无需依赖其他组应用平台，只需本地应用启动直播全流程‘</p>
+<p><a href="http://redmine.guahao-inc.com/issues/98213" target="_blank" rel="external">任务 #98213</a> 互动视频高并发访问性能优化(新建)<br>互动视频在线视频存储优化，使用codis替换在线视频db存储，整理视频流程，抽取优化点，整体优化设计</p>
+<p>1 CRM-PLUS<br>2 推流解析失败修复(已修复上线)</p>
+<h1 id="付明旺"><a href="#付明旺" class="headerlink" title="付明旺"></a>付明旺</h1><p>1 mars引入echat-sdk<br>2 搭建android studio开发环境</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/meeting/" rel="tag"># meeting</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/13/Netty-in-Action之ChannelHandler和ChannelPipeline/" rel="next" title="Netty in Action之ChannelHandler和ChannelPipeline">
+                <i class="fa fa-chevron-left"></i> Netty in Action之ChannelHandler和ChannelPipeline
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.png"
+               alt="danquanmiao" />
+          <p class="site-author-name" itemprop="name">danquanmiao</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#张涛"><span class="nav-number">1.</span> <span class="nav-text">张涛</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#任加勒"><span class="nav-number">2.</span> <span class="nav-text">任加勒</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#黄嘉颖"><span class="nav-number">3.</span> <span class="nav-text">黄嘉颖</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#魏帅"><span class="nav-number">4.</span> <span class="nav-text">魏帅</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#缪丹权"><span class="nav-number">5.</span> <span class="nav-text">缪丹权</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#汤政"><span class="nav-number">6.</span> <span class="nav-text">汤政</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#付明旺"><span class="nav-number">7.</span> <span class="nav-text">付明旺</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">danquanmiao</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

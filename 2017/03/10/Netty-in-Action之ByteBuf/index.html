@@ -1,0 +1,794 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Netty," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="ByteBuf API特点
+可扩展用户定义的buffer类型
+一个内置的composite buffer类型实现了透明的零拷贝
+根据需求扩展（处理）能力（类似JDK StringBuilder）
+读写模式切换不需要调用ByteBuffer的flip()方法
+读和写采用不同的索引
+支持方法链(method chaining)
+支持引用计数(reference counting)
+支持对象池(Pool">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Netty in Action之ByteBuf">
+<meta property="og:url" content="http://yoursite.com/2017/03/10/Netty-in-Action之ByteBuf/index.html">
+<meta property="og:site_name" content="mdq's blog">
+<meta property="og:description" content="ByteBuf API特点
+可扩展用户定义的buffer类型
+一个内置的composite buffer类型实现了透明的零拷贝
+根据需求扩展（处理）能力（类似JDK StringBuilder）
+读写模式切换不需要调用ByteBuffer的flip()方法
+读和写采用不同的索引
+支持方法链(method chaining)
+支持引用计数(reference counting)
+支持对象池(Pool">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/markdown/f5-1.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/markdown/f5-3.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/markdown/l5-10.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/markdown/l5-11.jpg">
+<meta property="og:image" content="http://omkwvbhq9.bkt.clouddn.com/markdown/l5-14.jpg">
+<meta property="og:updated_time" content="2017-03-14T02:47:38.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Netty in Action之ByteBuf">
+<meta name="twitter:description" content="ByteBuf API特点
+可扩展用户定义的buffer类型
+一个内置的composite buffer类型实现了透明的零拷贝
+根据需求扩展（处理）能力（类似JDK StringBuilder）
+读写模式切换不需要调用ByteBuffer的flip()方法
+读和写采用不同的索引
+支持方法链(method chaining)
+支持引用计数(reference counting)
+支持对象池(Pool">
+<meta name="twitter:image" content="http://omkwvbhq9.bkt.clouddn.com/markdown/f5-1.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/03/10/Netty-in-Action之ByteBuf/"/>
+
+
+
+
+
+  <title> Netty in Action之ByteBuf | mdq's blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">mdq's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/10/Netty-in-Action之ByteBuf/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="danquanmiao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="mdq's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Netty in Action之ByteBuf
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-03-10T13:41:25+08:00">
+                2017-03-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="ByteBuf-API特点"><a href="#ByteBuf-API特点" class="headerlink" title="ByteBuf API特点"></a>ByteBuf API特点</h1><ol>
+<li>可扩展用户定义的buffer类型</li>
+<li>一个内置的composite buffer类型实现了透明的零拷贝</li>
+<li>根据需求扩展（处理）能力（类似JDK StringBuilder）</li>
+<li>读写模式切换不需要调用ByteBuffer的flip()方法</li>
+<li>读和写采用不同的索引</li>
+<li>支持方法链(method chaining)</li>
+<li>支持引用计数(reference counting)</li>
+<li>支持对象池(Pooling)</li>
+</ol>
+<hr>
+<a id="more"></a>
+<h1 id="ByteBuf使用模式"><a href="#ByteBuf使用模式" class="headerlink" title="ByteBuf使用模式"></a>ByteBuf使用模式</h1><h2 id="堆内存字节缓冲区-HEAP-BUFFERS"><a href="#堆内存字节缓冲区-HEAP-BUFFERS" class="headerlink" title="堆内存字节缓冲区(HEAP BUFFERS)"></a>堆内存字节缓冲区(HEAP BUFFERS)</h2><p>最常用的ByteBuf模式把数据存储在JVM的堆空间。这个模式被称为字节数组(backing array)  在不用对象池的情况下，提供快速分配和再分配（的功能）。如1.1所示，这个方式非常适合你处理遗留数据(legacy data)。   </p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/markdown/f5-1.jpg" alt="一个16字节的ByteBuf，索引为0" title="图1.1  一个16字节的ByteBuf，索引为0"></p>
+<h2 id="直接内存字节缓冲区-DIRECT-BUFFERS"><a href="#直接内存字节缓冲区-DIRECT-BUFFERS" class="headerlink" title="直接内存字节缓冲区(DIRECT BUFFERS)"></a>直接内存字节缓冲区(DIRECT BUFFERS)</h2><p>Direct buffer是另一种ByteBuf的模式。我们总是期望分配给对象创建的内存来自堆，但其实不一定是——ByteBuffer类和NIO一起在1.4版本被引入JDK，允许JVM的实现通过本地调用(native calls)来分配内存。</p>
+<p>Direct buffer主要的缺点是它们分配和释放的开销比heap buffer更大。如果你用的是遗留代码，你可能还会碰上另一个问题：因为数据不在堆上，你不得不做一次拷贝。</p>
+<h2 id="复合字节缓冲区-COMPOSITE-BUFFERS"><a href="#复合字节缓冲区-COMPOSITE-BUFFERS" class="headerlink" title="复合字节缓冲区(COMPOSITE BUFFERS)"></a>复合字节缓冲区(COMPOSITE BUFFERS)</h2><p>多个ByteBuf实例的统一视图(an aggregated view of multiple ByteBufs)。用这个模式，你可以按需增加或者删除ByteBuf实例，这是JDK ByteBuffer完全没有的一个特性。</p>
+<h1 id="字节级操作"><a href="#字节级操作" class="headerlink" title="字节级操作"></a>字节级操作</h1><h2 id="随机数据获取索引"><a href="#随机数据获取索引" class="headerlink" title="随机数据获取索引"></a>随机数据获取索引</h2><p>ByteBuf索引是从0开始的：第一个字节的索引是0，最后一个总是capacity()-1。</p>
+<h2 id="连续数据获取索引"><a href="#连续数据获取索引" class="headerlink" title="连续数据获取索引"></a>连续数据获取索引</h2><p>从图1.2可见，一个ByteBuf被它的两个索引分成了三个区域。  </p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/markdown/f5-3.jpg" alt="ByteBuf内部划分" title="图1.2 ByteBuf内部划分"></p>
+<p>readable字节分段存储真正的数据，一个新分配的，重新包装的(wrapped)，或者刚拷贝的buffer的readerIndex默认值是0。<br>writable字节分段是一块包含未定义内容，待写入的内存。</p>
+<p>你可以通过调用markReaderIndex()，markWriterIndex(), resetReaderIndex()和resetWriterIndex()设置和重置ByteBuf readerIndex和writerIndex。</p>
+<h2 id="索引操作"><a href="#索引操作" class="headerlink" title="索引操作"></a>索引操作</h2><p>最简单的用法是indexOf()方法。<br>ByteBufProcessor这个接口就定义了一个方法，boolean process(byte value)</p>
+<h2 id="派生的buffer"><a href="#派生的buffer" class="headerlink" title="派生的buffer"></a>派生的buffer</h2><p>一个派生的buffer将ByteBuf的内容以一种特定的方式呈现。</p>
+<ul>
+<li>duplicate()</li>
+<li>slice()</li>
+<li>slice(int, int)</li>
+<li>Unpooled.unmodifiableBuffer(…)</li>
+<li>order(ByteOrder)</li>
+<li>readSlice(int)<br>每个方法都返回一个新的ByteBuf实例，包含该实例自己的reader，writer和标记索引。</li>
+</ul>
+<p>注意：和JDK ByteBuffer一样，内部的存储是和源ByteBuf共享的。这让派生buffer的创建开销不是不大，但是也意味着如果你改变了派生buffer的内容，<br>你同时也在改变源buffer实例(source instance)的内容</p>
+<p>下面的代码说明了如何用slice(int, int)来操作子ByteBuf(slice)  </p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/markdown/l5-10.jpg" alt="分割一个ByteBuf" title="代码清单1.3 分割一个ByteBuf"></p>
+<p>ByteBuf.copy的区别在于：  </p>
+<p><img src="http://omkwvbhq9.bkt.clouddn.com/markdown/l5-11.jpg" alt="拷贝一个ByteBuf" title="代码清单1.4 拷贝一个ByteBuf"></p>
+<h2 id="读写操作"><a href="#读写操作" class="headerlink" title="读写操作"></a>读写操作</h2><p>get()和set()操作从一个指定的索引开始操作，不改变索引的值<br>read()和write()操作从一个指定的索引开始操作，随着读/写的字节数调整索引值</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">方法名称</th>
+<th style="text-align:left">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">isReadable()</td>
+<td style="text-align:left">如果至少一字节大小的数据可读，返回true</td>
+</tr>
+<tr>
+<td style="text-align:center">isWritable()</td>
+<td style="text-align:left">如果至少一字节大小的数据可写，返回true</td>
+</tr>
+<tr>
+<td style="text-align:center">readableBytes()</td>
+<td style="text-align:left">返回可读的字节数</td>
+</tr>
+<tr>
+<td style="text-align:center">writableBytes()</td>
+<td style="text-align:left">返回可写的字节数</td>
+</tr>
+<tr>
+<td style="text-align:center">capacity()</td>
+<td style="text-align:left">返回ByteBuf可容纳的字节数。调用该方法后，ByteBuf会试着扩展容量直到到达maxCapacity()</td>
+</tr>
+<tr>
+<td style="text-align:center">maxCapacity()</td>
+<td style="text-align:left">返回ByteBuf可容纳的最大字节数</td>
+</tr>
+<tr>
+<td style="text-align:center">hasArray()</td>
+<td style="text-align:left">如果ByteBuf有一个字节数组，返回true</td>
+</tr>
+<tr>
+<td style="text-align:center">Array()</td>
+<td style="text-align:left">如果ByteBuf有一个字节数组，返回该数组；否则，抛出异常UnsupportedOperationException</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h1 id="ByteBufHolder接口"><a href="#ByteBufHolder接口" class="headerlink" title="ByteBufHolder接口"></a>ByteBufHolder接口</h1><p>我们经常会发现，除了数据负载，我们还需要存储各种数据属性。<br>一个HTTP响应就是一个很好的例子；除了以字节形式展现的消息体(content)，还有状态码(status code)， cookie等等。</p>
+<p>Netty提供了ByteBufHolder来应对这样一种常见的情况。ByteBufHolder还为Netty的一些高级特性提供了支持，<br>比如buffer池，一个ByteBuf可用从一个池中取出，然后在需要时被自动释放（回池中）。</p>
+<hr>
+<h1 id="ByteBuf分配"><a href="#ByteBuf分配" class="headerlink" title="ByteBuf分配"></a>ByteBuf分配</h1><h2 id="接口ByteBufAllocator"><a href="#接口ByteBufAllocator" class="headerlink" title="接口ByteBufAllocator"></a>接口ByteBufAllocator</h2><p>为了减少分配和释放内存的开销，Netty用接口ByteBufAllocator实现了对象池，可以用来分配我们提到过的所有模式的ByteBuf实例。  </p>
+<p>Netty提供了ByteBufAllocator的两种实现：PoolByteBufAllocator和UnpooledByteBufAllocator。<br>前者将ByteBuf实例放入池中，提高了性能，将内存碎片减少到最小。这个实现采用了一种内存分配的高效策略jemalloc。它已经被好几种现代操作系统所采用。<br>后者则没有把ByteBuf放入池中，每次被调用时，返回一个新的ByteBuf实例。  </p>
+<p>ByteBufAllocator的一个引用。下面的代码说明了这两种方法。<br><img src="http://omkwvbhq9.bkt.clouddn.com/markdown/l5-14.jpg" alt="拷贝一个ByteBuf" title="代码清单1.5 获取一个ByteBufAllocator引用"></p>
+<h2 id="Unpooled-buffers"><a href="#Unpooled-buffers" class="headerlink" title="Unpooled buffers"></a>Unpooled buffers</h2><p>Unpooled的工具类，提供了一些静态的辅助方法(helper methods)来创建unpooled ByteBuf实例</p>
+<h2 id="类ByteBufUtil"><a href="#类ByteBufUtil" class="headerlink" title="类ByteBufUtil"></a>类ByteBufUtil</h2><p>ByteBufUtil提供了一些操作ByteBuf的静态辅助方法。因为这个ByteBufUtil API是通用的，并且和内存池并无关联，所以这些辅助方法是在buffer类之外实现的  </p>
+<p>2个实用方法：<br>hexdump(), 它将一个ByteBuf内容以十六进制字符串的方式打印出来<br>boolean equals(ByteBuf, ByteBuf)，用来判断两个ByteBuf实例是否相等</p>
+<hr>
+<h1 id="引用计数-Reference-counting"><a href="#引用计数-Reference-counting" class="headerlink" title="引用计数(Reference counting)"></a>引用计数(Reference counting)</h1><p>引用计数是一项通过释放不再被其他对象引用的对象的资源，来优化内存使用和性能的技术。<br>Netty在第四版为ByteBuf和ByteBufHolderf引入了引用计数，它们都实现了ReferenceCounted接口。</p>
+<p>谁来负责释放？<span style="border-bottom:2px dashed black;">通常来说，最后一次获取对象的代码应该负责释放它。在下一章中，我们会解释这个概念和ChannelHandler以及ChannelPipeline之间的关联。</span></p>
+<hr>
+<h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p>下面是我们提到过的本章要点：</p>
+<ol>
+<li>读写分离的索引用来控制数据存取</li>
+<li>不同的内存管理策略——字节数组和direct buffer</li>
+<li>代表了多个ByteBuf统一视图的composite buffer</li>
+<li>数据存取的方法：搜索，分割，和拷贝</li>
+<li>read，write，get和set APIs</li>
+<li>ByteBufAllocator对象池和引用计数</li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Netty/" rel="tag"># Netty</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/08/markdown语法/" rel="next" title="markdown语法">
+                <i class="fa fa-chevron-left"></i> markdown语法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/03/13/Netty-in-Action之ChannelHandler和ChannelPipeline/" rel="prev" title="Netty in Action之ChannelHandler和ChannelPipeline">
+                Netty in Action之ChannelHandler和ChannelPipeline <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.png"
+               alt="danquanmiao" />
+          <p class="site-author-name" itemprop="name">danquanmiao</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ByteBuf-API特点"><span class="nav-number">1.</span> <span class="nav-text">ByteBuf API特点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ByteBuf使用模式"><span class="nav-number">2.</span> <span class="nav-text">ByteBuf使用模式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#堆内存字节缓冲区-HEAP-BUFFERS"><span class="nav-number">2.1.</span> <span class="nav-text">堆内存字节缓冲区(HEAP BUFFERS)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#直接内存字节缓冲区-DIRECT-BUFFERS"><span class="nav-number">2.2.</span> <span class="nav-text">直接内存字节缓冲区(DIRECT BUFFERS)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#复合字节缓冲区-COMPOSITE-BUFFERS"><span class="nav-number">2.3.</span> <span class="nav-text">复合字节缓冲区(COMPOSITE BUFFERS)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#字节级操作"><span class="nav-number">3.</span> <span class="nav-text">字节级操作</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#随机数据获取索引"><span class="nav-number">3.1.</span> <span class="nav-text">随机数据获取索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#连续数据获取索引"><span class="nav-number">3.2.</span> <span class="nav-text">连续数据获取索引</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引操作"><span class="nav-number">3.3.</span> <span class="nav-text">索引操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#派生的buffer"><span class="nav-number">3.4.</span> <span class="nav-text">派生的buffer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#读写操作"><span class="nav-number">3.5.</span> <span class="nav-text">读写操作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ByteBufHolder接口"><span class="nav-number">4.</span> <span class="nav-text">ByteBufHolder接口</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ByteBuf分配"><span class="nav-number">5.</span> <span class="nav-text">ByteBuf分配</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#接口ByteBufAllocator"><span class="nav-number">5.1.</span> <span class="nav-text">接口ByteBufAllocator</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Unpooled-buffers"><span class="nav-number">5.2.</span> <span class="nav-text">Unpooled buffers</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类ByteBufUtil"><span class="nav-number">5.3.</span> <span class="nav-text">类ByteBufUtil</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#引用计数-Reference-counting"><span class="nav-number">6.</span> <span class="nav-text">引用计数(Reference counting)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#小结"><span class="nav-number">7.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">danquanmiao</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>
